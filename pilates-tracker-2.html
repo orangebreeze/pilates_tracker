@@ -1,0 +1,437 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Pilates Princess">
+<meta name="theme-color" content="#f9a8c4">
+<title>Pilates Princess</title>
+<style>
+* { margin:0; padding:0; box-sizing:border-box; }
+:root {
+  --bg: #fff0f5;
+  --card: #ffffff;
+  --border: #ffd6e7;
+  --p1: #f9a8c4;
+  --p2: #f472b6;
+  --p3: #db2777;
+  --p4: #9d174d;
+}
+body {
+  font-family: -apple-system, 'Helvetica Neue', sans-serif;
+  background: var(--bg);
+  color: var(--p4);
+  padding: 16px;
+  padding-bottom: 40px;
+}
+.card {
+  background: var(--card);
+  border: 1.5px solid var(--border);
+  border-radius: 20px;
+  padding: 20px;
+  margin-bottom: 14px;
+}
+.streak { text-align: center; }
+.snum { font-size: 60px; font-weight: 800; color: var(--p3); font-family: Georgia, serif; line-height: 1; }
+.slbl { font-size: 11px; font-weight: 700; color: var(--p1); letter-spacing: 1.5px; text-transform: uppercase; margin-top: 6px; }
+.ssub { font-size: 13px; color: #ccc; margin-top: 8px; }
+.logbtn {
+  display: block; width: 100%; padding: 18px;
+  background: var(--p3); color: white; border: none;
+  border-radius: 16px; font-size: 17px; font-weight: 700;
+  font-family: Georgia, serif; cursor: pointer; margin-bottom: 14px;
+}
+.logbtn.done { background: #7ec87e; color: #1a4d1a; }
+.rtitle { font-size: 11px; font-weight: 700; color: var(--p1); letter-spacing: 1.5px; text-transform: uppercase; margin-bottom: 14px; }
+.rrow { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; }
+.rrow:last-child { margin-bottom: 0; }
+.rlbl { font-size: 14px; font-weight: 600; color: var(--p4); }
+.rsub { font-size: 12px; color: #bbb; margin-top: 2px; }
+.tog { position: relative; width: 48px; height: 28px; flex-shrink: 0; }
+.tog input { display: none; }
+.tslider { position: absolute; inset: 0; background: #ddd; border-radius: 28px; cursor: pointer; transition: background 0.2s; }
+.tslider:before { content: ''; position: absolute; width: 22px; height: 22px; left: 3px; top: 3px; background: white; border-radius: 50%; transition: transform 0.2s; }
+.tog input:checked + .tslider { background: var(--p2); }
+.tog input:checked + .tslider:before { transform: translateX(20px); }
+.setbtn { background: var(--bg); border: 1.5px solid var(--border); border-radius: 10px; padding: 7px 14px; font-size: 12px; font-weight: 700; color: var(--p3); cursor: pointer; }
+.timein { border: 1.5px solid var(--border); border-radius: 10px; padding: 7px 10px; font-size: 14px; color: var(--p4); background: var(--bg); }
+.calhdr { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
+.calmo { font-size: 16px; font-weight: 700; color: var(--p3); font-family: Georgia, serif; }
+.calnav { background: none; border: 1.5px solid var(--border); border-radius: 8px; width: 32px; height: 32px; font-size: 20px; color: var(--p2); cursor: pointer; display: flex; align-items: center; justify-content: center; }
+.calgrid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; text-align: center; }
+.dayname { font-size: 10px; font-weight: 700; color: var(--p1); padding: 4px 0; text-transform: uppercase; }
+.day { aspect-ratio: 1; display: flex; align-items: center; justify-content: center; border-radius: 50%; font-size: 12px; color: var(--p4); }
+.day.today { border: 2px solid var(--p2); font-weight: 700; }
+.day.logged { background: var(--p2); color: white; font-size: 10px; }
+.day.logged.today { background: var(--p3); border-color: var(--p3); }
+.hitem { display: flex; align-items: center; gap: 12px; padding: 10px 0; border-bottom: 1px solid var(--bg); }
+.hitem:last-child { border-bottom: none; padding-bottom: 0; }
+.hdot { width: 32px; height: 32px; background: var(--p2); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 14px; flex-shrink: 0; }
+.hname { font-size: 14px; font-weight: 600; color: var(--p4); }
+.hdate { font-size: 12px; color: #bbb; }
+.hempty { text-align: center; color: #ddd; padding: 20px 0; font-size: 13px; }
+.toast {
+  position: fixed; bottom: 30px; left: 50%;
+  transform: translateX(-50%) translateY(100px);
+  background: var(--p3); color: white;
+  padding: 12px 24px; border-radius: 40px;
+  font-size: 14px; font-weight: 600;
+  transition: transform 0.35s cubic-bezier(.34,1.56,.64,1);
+  pointer-events: none; white-space: nowrap; z-index: 999;
+}
+.toast.show { transform: translateX(-50%) translateY(0); }
+</style>
+</head>
+<body>
+
+<div class="card streak">
+  <div class="snum" id="snum">0</div>
+  <div class="slbl">Day Streak</div>
+  <div class="ssub" id="ssub">Log your first session to start!</div>
+</div>
+
+<button class="logbtn" id="logbtn" onclick="logToday()">Log today's Pilates</button>
+
+<div class="card">
+  <div class="rtitle">Reminders</div>
+  <div class="rrow">
+    <div>
+      <div class="rlbl">Daily nudge</div>
+      <div class="rsub" id="nudgesub">Set a time below</div>
+    </div>
+    <label class="tog">
+      <input type="checkbox" id="dtog" onchange="toggleDaily()">
+      <span class="tslider"></span>
+    </label>
+  </div>
+  <div class="rrow" id="timerow" style="display:none">
+    <span class="rlbl" style="color:#bbb;font-size:13px">Remind me at</span>
+    <input type="time" class="timein" id="dtime" value="08:00" onchange="saveTime()">
+  </div>
+  <div class="rrow">
+    <div>
+      <div class="rlbl">Next class</div>
+      <div class="rsub">Set your class time for a countdown</div>
+    </div>
+    <button class="setbtn" onclick="togglePC()">Set</button>
+  </div>
+  <div id="pcrow" style="display:none; margin-top:12px; padding-top:12px; border-top:1px solid var(--bg);">
+    <div style="display:flex;align-items:center;justify-content:space-between;">
+      <span class="rlbl" style="color:#bbb;font-size:13px">Class time</span>
+      <input type="datetime-local" class="timein" id="pctime" onchange="savePC()">
+    </div>
+  </div>
+</div>
+
+<div class="card" id="countdown-card" style="display:none; text-align:center;">
+  <div class="rtitle">Next class in</div>
+  <div id="countdown-display" style="font-size:38px; font-weight:800; color:var(--p3); font-family:Georgia,serif; letter-spacing:2px; margin:8px 0;">--:--:--</div>
+  <div id="countdown-date" style="font-size:13px; color:#bbb; margin-bottom:14px;"></div>
+  <button class="setbtn" onclick="clearClass()" style="font-size:11px;">Clear</button>
+</div>
+
+<div class="card">
+  <div class="calhdr">
+    <button class="calnav" onclick="prevMonth()">&#8249;</button>
+    <div class="calmo" id="calmo"></div>
+    <button class="calnav" onclick="nextMonth()">&#8250;</button>
+  </div>
+  <div class="calgrid" id="calgrid"></div>
+</div>
+
+<div class="card">
+  <div class="rtitle">Recent sessions</div>
+  <div id="hist"></div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+var STORE = 'pp_v4';
+var MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+var DAYS = ['Su','Mo','Tu','We','Th','Fr','Sa'];
+var BOW = '\uD83C\uDF80';
+
+var data = {
+  sessions: [],
+  dailyOn: false,
+  dailyTime: '08:00',
+  classTime: null,
+  month: new Date().getMonth(),
+  year: new Date().getFullYear()
+};
+
+function loadData() {
+  try {
+    var raw = localStorage.getItem(STORE);
+    if (raw) {
+      var s = JSON.parse(raw);
+      if (Array.isArray(s.sessions)) data.sessions = s.sessions;
+      if (typeof s.dailyOn === 'boolean') data.dailyOn = s.dailyOn;
+      if (s.dailyTime) data.dailyTime = s.dailyTime;
+      if (s.classTime) data.classTime = s.classTime;
+    }
+  } catch (e) {}
+}
+
+function saveData() {
+  try { localStorage.setItem(STORE, JSON.stringify(data)); } catch (e) {}
+}
+
+function pad2(n) { return n < 10 ? '0' + n : '' + n; }
+
+function todayKey() {
+  var d = new Date();
+  return d.getFullYear() + '-' + pad2(d.getMonth() + 1) + '-' + pad2(d.getDate());
+}
+
+function isLogged() { return data.sessions.indexOf(todayKey()) !== -1; }
+
+function calcStreak() {
+  if (!data.sessions.length) return 0;
+  var keys = data.sessions.slice().sort().reverse();
+  var streak = 0;
+  var check = new Date();
+  var tk = todayKey();
+  for (var i = 0; i < 500; i++) {
+    var k = check.getFullYear() + '-' + pad2(check.getMonth() + 1) + '-' + pad2(check.getDate());
+    if (keys.indexOf(k) !== -1) {
+      streak++;
+      check.setDate(check.getDate() - 1);
+    } else if (k === tk) {
+      check.setDate(check.getDate() - 1);
+    } else {
+      break;
+    }
+  }
+  return streak;
+}
+
+function logToday() {
+  var tk = todayKey();
+  if (isLogged()) {
+    data.sessions = data.sessions.filter(function(s) { return s !== tk; });
+    showToast('Session removed');
+  } else {
+    data.sessions.push(tk);
+    showToast('Logged! Keep it up!');
+  }
+  saveData();
+  renderAll();
+}
+
+function renderAll() {
+  var sk = calcStreak();
+  var lg = isLogged();
+
+  document.getElementById('snum').textContent = sk;
+  document.getElementById('ssub').textContent =
+    sk === 0 ? 'Log your first session to start!' :
+    sk === 1 ? 'Amazing start! Keep going!' :
+    sk + ' days strong!';
+
+  var btn = document.getElementById('logbtn');
+  btn.textContent = lg ? 'Logged for today!' : "Log today's Pilates";
+  btn.className = lg ? 'logbtn done' : 'logbtn';
+
+  document.getElementById('dtog').checked = data.dailyOn;
+  document.getElementById('dtime').value = data.dailyTime;
+  document.getElementById('timerow').style.display = data.dailyOn ? 'flex' : 'none';
+  document.getElementById('nudgesub').textContent = data.dailyOn
+    ? 'Every day at ' + fmtTime(data.dailyTime) : 'Set a time below';
+
+  renderCal();
+  renderHistory();
+  renderCountdown();
+}
+
+function fmtTime(t) {
+  var p = t.split(':'), h = parseInt(p[0], 10);
+  return (h % 12 || 12) + ':' + p[1] + (h >= 12 ? ' PM' : ' AM');
+}
+
+function renderCal() {
+  var y = data.year, mo = data.month, tk = todayKey();
+  document.getElementById('calmo').textContent = MONTHS[mo] + ' ' + y;
+
+  var grid = document.getElementById('calgrid');
+  while (grid.firstChild) grid.removeChild(grid.firstChild);
+
+  var i, el;
+
+  // day headers
+  for (i = 0; i < 7; i++) {
+    el = document.createElement('div');
+    el.className = 'dayname';
+    el.textContent = DAYS[i];
+    grid.appendChild(el);
+  }
+
+  // empty leading cells
+  var firstDay = new Date(y, mo, 1).getDay();
+  for (i = 0; i < firstDay; i++) {
+    el = document.createElement('div');
+    el.className = 'day';
+    grid.appendChild(el);
+  }
+
+  // day cells
+  var total = new Date(y, mo + 1, 0).getDate();
+  for (var d = 1; d <= total; d++) {
+    var dk = y + '-' + pad2(mo + 1) + '-' + pad2(d);
+    var wasLogged = data.sessions.indexOf(dk) !== -1;
+    var isToday = dk === tk;
+    el = document.createElement('div');
+    el.className = 'day' + (wasLogged ? ' logged' : '') + (isToday ? ' today' : '');
+    el.textContent = wasLogged ? BOW : String(d);
+    grid.appendChild(el);
+  }
+}
+
+function renderHistory() {
+  var el = document.getElementById('hist');
+  while (el.firstChild) el.removeChild(el.firstChild);
+
+  if (!data.sessions.length) {
+    var empty = document.createElement('div');
+    empty.className = 'hempty';
+    empty.textContent = "No sessions yet. Let's go!";
+    el.appendChild(empty);
+    return;
+  }
+
+  var recent = data.sessions.slice().sort().reverse().slice(0, 8);
+  for (var i = 0; i < recent.length; i++) {
+    var parts = recent[i].split('-');
+    var d = new Date(parseInt(parts[0], 10), parseInt(parts[1], 10) - 1, parseInt(parts[2], 10));
+    var lbl = d.toLocaleDateString('en-US', { weekday:'short', month:'short', day:'numeric' });
+
+    var item = document.createElement('div');
+    item.className = 'hitem';
+
+    var dot = document.createElement('div');
+    dot.className = 'hdot';
+    dot.textContent = BOW;
+
+    var info = document.createElement('div');
+    var name = document.createElement('div');
+    name.className = 'hname';
+    name.textContent = 'Pilates';
+    var date = document.createElement('div');
+    date.className = 'hdate';
+    date.textContent = lbl;
+
+    info.appendChild(name);
+    info.appendChild(date);
+    item.appendChild(dot);
+    item.appendChild(info);
+    el.appendChild(item);
+  }
+}
+
+function toggleDaily() {
+  data.dailyOn = document.getElementById('dtog').checked;
+  saveData(); renderAll();
+  if (data.dailyOn && typeof Notification !== 'undefined' && Notification.permission === 'default') {
+    Notification.requestPermission();
+  }
+}
+
+function saveTime() { data.dailyTime = document.getElementById('dtime').value; saveData(); renderAll(); }
+function togglePC() {
+  var r = document.getElementById('pcrow');
+  r.style.display = r.style.display === 'none' ? 'block' : 'none';
+}
+
+function savePC() {
+  var val = document.getElementById('pctime').value;
+  if (!val) return;
+  data.classTime = val;
+  saveData();
+  document.getElementById('pcrow').style.display = 'none';
+  renderCountdown();
+  showToast('Class time saved!');
+}
+
+function clearClass() {
+  data.classTime = null;
+  saveData();
+  document.getElementById('countdown-card').style.display = 'none';
+  document.getElementById('pctime').value = '';
+}
+
+var countdownTimer = null;
+
+function renderCountdown() {
+  if (!data.classTime) {
+    document.getElementById('countdown-card').style.display = 'none';
+    if (countdownTimer) { clearInterval(countdownTimer); countdownTimer = null; }
+    return;
+  }
+
+  var classMs = new Date(data.classTime).getTime();
+  var now = Date.now();
+
+  if (classMs < now) {
+    // class already passed
+    document.getElementById('countdown-card').style.display = 'block';
+    document.getElementById('countdown-display').textContent = 'Class time!';
+    document.getElementById('countdown-date').textContent = 'Your class was scheduled for ' + fmtClassDate(data.classTime);
+    if (countdownTimer) { clearInterval(countdownTimer); countdownTimer = null; }
+    return;
+  }
+
+  document.getElementById('countdown-card').style.display = 'block';
+  document.getElementById('countdown-date').textContent = fmtClassDate(data.classTime);
+
+  function tick() {
+    var diff = new Date(data.classTime).getTime() - Date.now();
+    if (diff <= 0) {
+      document.getElementById('countdown-display').textContent = 'Class time!';
+      if (countdownTimer) { clearInterval(countdownTimer); countdownTimer = null; }
+      return;
+    }
+    var h = Math.floor(diff / 3600000);
+    var m = Math.floor((diff % 3600000) / 60000);
+    var s = Math.floor((diff % 60000) / 1000);
+    document.getElementById('countdown-display').textContent =
+      pad2(h) + ':' + pad2(m) + ':' + pad2(s);
+  }
+
+  tick();
+  if (countdownTimer) clearInterval(countdownTimer);
+  countdownTimer = setInterval(tick, 1000);
+}
+
+function fmtClassDate(dtStr) {
+  var d = new Date(dtStr);
+  return d.toLocaleDateString('en-US', { weekday:'short', month:'short', day:'numeric' })
+    + ' at ' + d.toLocaleTimeString('en-US', { hour:'numeric', minute:'2-digit' });
+}
+
+function prevMonth() {
+  data.month--;
+  if (data.month < 0) { data.month = 11; data.year--; }
+  renderCal();
+}
+
+function nextMonth() {
+  data.month++;
+  if (data.month > 11) { data.month = 0; data.year++; }
+  renderCal();
+}
+
+function showToast(msg) {
+  var t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(function() { t.classList.remove('show'); }, 2600);
+}
+
+loadData();
+renderAll();
+</script>
+</body>
+</html>
